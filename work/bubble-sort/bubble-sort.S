@@ -46,6 +46,7 @@ outer:
 	
 	addi $3, $0, 0	// int j = 0 for the inner loop
 	add $8, $10, $0  	// temp for addresses
+	add $12, $0, $0	// to keep track of changes (0=no change,1=change)
 inner:	
 	beq $3, $4, inner_done
 	nop	
@@ -62,6 +63,7 @@ inner:
 	add $6, $0, $5	// arr[j] = tmp
 	sw $6, 0($8)
 	sw $7, 4($8)
+	addi $12, $0, 1
 end_if:
 
   	addi $8, $8, 4
@@ -69,6 +71,8 @@ end_if:
 	nop	
 inner_done:
 	addi $4, $4, -1 	// setting the boundaries for the inner loop
+	beq $12, $0, outer_done
+	nop
 	j outer
 	nop
 outer_done:	
