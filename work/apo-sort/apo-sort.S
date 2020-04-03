@@ -39,18 +39,22 @@ _start:
 	addi $4, $11, -1	// upper boundary of the inner loop = N-1
 			// tmp regiter = $5
 	
+	addi $3, $0, 0	// int j = 0 for the inner loop
+
 outer:
 	beq $1, $2, outer_done
-	nop
-	addi $1, $1, 1	// i++
+	addi $1, $1, 1	// i++	
+	//nop
+	//addi $1, $1, 1	// i++
 	
-	addi $3, $0, 0	// int j = 0 for the inner loop
+	//addi $3, $0, 0	// int j = 0 for the inner loop
 	add $8, $10, $0  	// temp for addresses
 	add $12, $0, $0	// to keep track of changes (0=no change,1=change)
 inner:	
 	beq $3, $4, inner_done
-	nop	
-	addi $3, $3, 1	// j++	
+	addi $3, $3, 1	// j++	switched	
+	//nop	
+	//addi $3, $3, 1	// j++	
 
   	lw $6, 0($8)	// arr[j]
 	lw $7, 4($8)	// arr[j+1]
@@ -66,15 +70,17 @@ inner:
 	addi $12, $0, 1
 end_if:
 
-  	addi $8, $8, 4
+  	//addi $8, $8, 4
 	j inner
-	nop	
+	addi $8, $8, 4
+	//nop	
 inner_done:
-	addi $4, $4, -1 	// setting the boundaries for the inner loop
+	//addi $4, $4, -1 	// setting the boundaries for the inner loop
 	beq $12, $0, outer_done
-	nop
+	addi $4, $4, -1 	// setting the boundaries for the inner loop
+	//nop
 	j outer
-	nop
+	addi $3, $0, 0	// int j = 0 for the inner loop
 outer_done:	
 
 
