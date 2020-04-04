@@ -38,13 +38,13 @@ _start:
 	la   $a0, array_start
 	la   $a1, array_size
 	lw   $a1, 0($a1) // number of elements in the array
-
+	sll  $a1, $a1, 2 // number of elements * 4
 
 //Insert your code there
 
 
 addi $s0, $a0, 0  //Pozice pro kterou se aktualne hleda minimum (offset do pole, zvysuje se po 4 bajtech)
-addi $s1, $a0, 60 //Maximalni hodnota indexu/offsetu. Slouzi k ukonceni cyklu = pocet prvku v poli * 4 (aktualne 15 * 4)
+add $s1, $a0, $a1 //Maximalni hodnota indexu/offsetu. Slouzi k ukonceni cyklu = pocet prvku v poli * 4 (aktualne 15 * 4)
 add  $s2, $0, $s0 //Pracovni pozice (offset), prvek 
 // $s3 - offset nejmensiho nalezeneho prvku v aktualnim behu
 // $s4 - hodnota nejmensiho nalezeneho prvku
