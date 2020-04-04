@@ -25,18 +25,19 @@ add  $s2, $0, $s0 //Pracovni pozice (offset), prvek
 
 hlavni_cyklus:
 	beq $s0, $s1, hlavni_cyklus_end
-	
+	nop
 	lw $s4, pole($s0)
 	add $s3, $s0, $0
 	add $s2, $s0, $0
 	
 	vnitrni_cyklus:
 	beq $s2, $s1, vnitrni_cyklus_end
-		
+	nop	
 		lw $s5, pole($s2)
 		
                               slt  $at, $s4, $s5
                               bne  $at, $0, neni_minimum
+			nop
 			addi $s3, $s2, 0
 			addi $s4, $s5, 0
 neni_minimum:
