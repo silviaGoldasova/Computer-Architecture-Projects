@@ -53,7 +53,6 @@ add  $s2, $0, $s0 //Pracovni pozice (offset), prvek
 
 outer_loop:
 	beq $s0, $s1, outer_end	// 0 - (N-2) including
-	nop
 	lw $s4, 0($s0)		// reg $sd = min value from address arr[0]
 	add $s3, $s0, $0		// reg $s3 = index of min
 	add $s2, $s0, $0		// reg $s2 = working position
@@ -74,13 +73,9 @@ inner_loop_end:
 	lw $s5, 0($s0)
 	sw $s4, 0($s0)
 	sw $s5, 0($s3)
-	
 	j outer_loop
 	addi $s0, $s0, 4
 outer_end:
-
-
-
 
 //Final infinite loop
 end_loop:
