@@ -79,13 +79,21 @@ tx_busy:	lw	$7, SERP_TX_ST_REG_o($1) 	// read status of transmitter
 	beq	$7, $zero, tx_busy		// if not ready wait for ready condition
 	nop				// fill branch instruction delay slot
 
-	//addi $10, $10, 0x30
-	//sw	$10,SERP_TX_DATA_REG_o($1) 	// write byte to Tx data register
-
-	sll $11, $10, 4
+	srl $11, $10, 4
+	andi $11, $11, 0xF
+	slti $15, $11, 10		// branch if $11 < 10
+	 bne $15, $zero, number_A
+	nop
+	addi $11, $11, 39 
+number_A:
 	addi $11, $11, 0x30
 
 	andi $12, $10, 0xF
+	slti $15, $12, 10		// branch if $12 < 10
+	 bne $15, $zero, number_B
+	nop
+	addi $12, $12, 39
+number_B:
 	addi $12, $12, 0x30
 
 	sw	$11,SERP_TX_DATA_REG_o($1) 	// write byte to Tx data register
@@ -93,7 +101,7 @@ tx_busy:	lw	$7, SERP_TX_ST_REG_o($1) 	// read status of transmitter
 tx_busy_mid:
 	lw	$7, SERP_TX_ST_REG_o($1) 	// read status of transmitter
 	andi	$7, $7, SERP_TX_ST_REG_READY_m // mask ready bit
-	beq	$7, $zero, tx_busy_mid		// if not ready wait for ready condition
+	beq	$7, $zero, tx_busy_mid	// if not ready wait for ready condition
 	nop				// fill branch instruction delay slot
 
 	sw	$12,SERP_TX_DATA_REG_o($1) 	// write byte to Tx data register
@@ -106,7 +114,7 @@ done:
 tx_busy_final:	lw	$7, SERP_TX_ST_REG_o($1) 	// read status of transmitter
 	andi	$7, $7, SERP_TX_ST_REG_READY_m 	// mask ready bit
 	beq	$7, $zero, tx_busy_final		// if not ready wait for ready condition
-
+	nop
 	sw	$5,SERP_TX_DATA_REG_o($1) 	// write byte to Tx data register
 	break			// stop continuous execution
 
@@ -124,7 +132,7 @@ end_loop:
 // .align    2 // not supported by QtMips yet
 
 input_val:
-	.word 0x12345678
+	.word 0x12abff78
 
 // Specify location to show in memory window
 #pragma qtmips focus memory input_val
