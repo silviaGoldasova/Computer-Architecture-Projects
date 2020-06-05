@@ -2,15 +2,27 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+
 #include <stdint.h>
 #include <time.h>
 #include <unistd.h>
 #include <stdbool.h>
-#include <stdlib.h>
+#include <termios.h>
+#include <unistd.h>
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include "mzapo_parlcd.h"
 #include "mzapo_phys.h"
 #include "mzapo_regs.h"
+
+
+#define BAUDRATE B38400
+#define _POSIX_SOURCE 1 /* POSIX compliant source */
+#define FALSE 0
+#define TRUE 1
 
 #define LCD_WIDTH 480
 #define LCD_HEIGHT 320
@@ -26,6 +38,40 @@ typedef struct CellDirection{
 	int posY;
 	unsigned char direction; 
 } CellDirection;
+
+
+static void setSerialPort() {
+	struct termios oldtio, newtio;
+    int fd = open("/dev/stdin", O_RDWR | O_NOCTTY);
+
+    if (fd < 0) {
+        exit(2);
+    }
+
+    tcgetattr(fd,&oldtio); // save current port settings
+
+	bzero(&newtio, sizeof(newtio));
+	newtio.c_cflag = CS8 | CREAD;
+	newtio.c_iflag = IGNPAR;
+	newtio.c_oflag = 0;
+
+	// set input mode (non-canonical, no echo,...)
+	newtio.c_lflag = 0;
+		
+	newtio.c_cc[VTIME]    = 0;   // inter-character timer unused
+	newtio.c_cc[VMIN]     = 1;   // blocking read until 1 char received
+	
+	tcflush(fd, TCIFLUSH);
+	tcsetattr(fd,TCSANOW,&newtio);
+	
+	/*while (STOP==FALSE) {       // loop for input 
+		res = read(fd,buf,255);   // returns after 5 chars have been input 
+		buf[res]=0;               // so we can printf... 
+		printf(":%s:%d\n", buf, res);
+		if (buf[0]=='z') STOP=TRUE;
+	}*/
+	//tcsetattr(fd,TCSANOW,&oldtio);
+}
 
 void printSnakeToLcd(uint16_t * content, unsigned char * parlcd_mem_base) {
 	parlcd_write_cmd(parlcd_mem_base, 0x2c);
@@ -292,6 +338,7 @@ int main(int argc, char *argv[]) {
 	//CellDirection ** directionArr = (CellDirection **) calloc(480*320, sizeof(CellDirection *));   
 	CellDirection * directionArr[480*320];
 	int snakeLength = 5;
+	setSerialPort();
 
 	printf("Start\n");
 	//Setup memory mapping which provides access to the peripheral  registers region of RGB LEDs, knobs and line of yellow LEDs.
@@ -322,15 +369,12 @@ int main(int argc, char *argv[]) {
 		}
 	}
 	
+	if (read(0, &c, 1) == 1) {
+		printf(".");
+		write(1, &c, 1);
+	}
+
 	sleep(2);
-
-	/*printSnakeToLcd(snake, parlcd_mem_base);
-	sleep(1);
-
-	updateDirection(directionArr[snakeLength-1], 'U');
-	snakeMakeMove(snake, directionArr, &snakeLength);
-	sleep(1);
-	*/
 
 	// leave black screen
 	blackLcd(parlcd_mem_base);
