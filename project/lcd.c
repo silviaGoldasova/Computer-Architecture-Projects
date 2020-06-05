@@ -36,6 +36,9 @@
 #define BORDER_SIZE 10
 #define APPLES_COUNT 25
 
+#define SPILED_REG_LED_LINE_o	0x004
+#define SPILED_REG_LED_RGB2_o	0x014
+
 typedef struct Cell{
 	int posX;
 	int posY;
@@ -160,6 +163,29 @@ void initializeBorders(uint16_t * snakeArr) {
 	
 }
 
+void lightGreenLEDline(unsigned char * mem_base){
+	uint32_t val_line = 0xFF00;
+    *(volatile uint32_t*)(mem_base + SPILED_REG_LED_RGB2_o) = val_line;
+	
+	val_line = 0xFFFFFFFF;
+	*(volatile uint32_t*)(mem_base + SPILED_REG_LED_LINE_o) = val_line;
+
+	sleep(0.5);
+}
+
+void lightRedLEDline(unsigned char * mem_base){
+	uint32_t val_line = 0xFF0000;
+    *(volatile uint32_t*)(mem_base + SPILED_REG_LED_RGB2_o) = val_line;
+	sleep(1);
+}
+
+void lightDownLEDline(unsigned char * mem_base) {
+	uint32_t val_line = 0x0;
+    *(volatile uint32_t*)(mem_base + SPILED_REG_LED_RGB1_o) = val_line;
+	*(volatile uint32_t*)(mem_base + SPILED_REG_LED_RGB2_o) = val_line;
+	*(volatile uint32_t*)(mem_base + SPILED_REG_LED_LINE_o) = val_line;
+}
+
 void redrawSnakeCell(uint16_t * snakeArr, int posX, int posY, uint16_t color) {
 
 	int distance = CELL_SIZE / 2;
@@ -227,7 +253,7 @@ void shiftDirCell(Cell * cell, unsigned char prevCellDir) {
 }
 
 bool isWithinLCD(int posX, int posY){
-	if (posX < 0 || posX > LCD_WIDTH || posY < 0 || posY > LCD_HEIGHT) {
+	if (posX < BORDER_SIZE || posX > LCD_WIDTH-BORDER_SIZE || posY < BORDER_SIZE || posY > LCD_HEIGHT-BORDER_SIZE) {
 		return false;
 	}
 	return true;
@@ -257,7 +283,7 @@ bool isApple(uint16_t * snakeArr, Cell * head) {
 
 }
 
-bool snakeMakeMove(uint16_t * snakeArr, Cell ** directionArr, int * length) {
+bool snakeMakeMove(uint16_t * snakeArr, Cell ** directionArr, int * length, unsigned char * mem_base) {
 
 	Cell * head = directionArr[*length-1];
 	int headPosX = head->posX;
@@ -269,6 +295,7 @@ bool snakeMakeMove(uint16_t * snakeArr, Cell ** directionArr, int * length) {
 	
 	shiftDirCell(head, head->direction);	// shift head cell, direction stays
 	if (isApple(snakeArr, head)){
+		lightGreenLEDline(mem_base);
 		redrawSnakeCell(snakeArr, head->posX, head->posY, 0xFFFF);
 		
 		directionArr[*length] = directionArr[*length-1];
@@ -444,6 +471,7 @@ int main(int argc, char *argv[]) {
 	
 	unsigned char *mem_base;
   	unsigned char *parlcd_mem_base;
+	
   	//unsigned int c;
   	uint16_t * snake = (uint16_t *) calloc(480*320, sizeof(uint16_t)); 
 	//Cell ** directionArr = (Cell **) calloc(480*320, sizeof(Cell *));   
@@ -460,6 +488,7 @@ int main(int argc, char *argv[]) {
 	if (parlcd_mem_base == NULL) exit(1);
 
 	parlcd_hx8357_init(parlcd_mem_base);
+	lightDownLEDline(mem_base);
 
 	initializeSnakeAndDirection(BORDER_SIZE+CELL_SIZE/2+CELL_SIZE, BORDER_SIZE + CELL_SIZE/2 + 8*CELL_SIZE, snakeLength, snake, directionArr);
 	initializeBorders(snake);
@@ -471,6 +500,7 @@ int main(int argc, char *argv[]) {
 	while (!(isGameOver)) {
 		printSnakeToLcd(snake, parlcd_mem_base);
 		sleep(0.5);
+		lightDownLEDline(mem_base);
 
 		//currentDir = getRandomDirection(currentDir);
 		currentDir = getKeyboardInput(currentDir);
@@ -478,10 +508,11 @@ int main(int argc, char *argv[]) {
 		if (currentDir == 'e') break; 
 		updateDirection(directionArr[snakeLength-1], currentDir);
 		
-		if (!(snakeMakeMove(snake, directionArr, &snakeLength))) {
+		if (!(snakeMakeMove(snake, directionArr, &snakeLength, mem_base))) {
 			isGameOver = true;
 		}
 	}
+	lightRedLEDline(mem_base);
 
 	sleep(2);
 
