@@ -20,8 +20,7 @@
 #include "mzapo_phys.h"
 #include "mzapo_regs.h"
 #include "font_functions.h"
-//#include "font_types.h"
-
+#include "leds_interaction.h"
 
 #define BAUDRATE B38400
 #define _POSIX_SOURCE 1 /* POSIX compliant source */
@@ -34,8 +33,6 @@
 #define BORDER_COLOR 0xFFFE
 #define BORDER_SIZE 10
 
-#define SPILED_REG_LED_LINE_o	0x004
-#define SPILED_REG_LED_RGB2_o	0x014
 
 #ifndef LCD_WIDTH
 #define LCD_WIDTH 480
@@ -87,18 +84,12 @@ void printBoardToLcd(uint16_t * content, unsigned char * parlcd_mem_base) {
 	for (int i = 0; i < 320 * 480 ; i++) {
 		parlcd_write_data(parlcd_mem_base, content[i]);
 	}
-} 
+}
 
 void blackLcd(unsigned char * parlcd_mem_base) {
 	parlcd_write_cmd(parlcd_mem_base, 0x2c);
 	for (int i = 0; i < 320 * 480; i++) {
 		parlcd_write_data(parlcd_mem_base, 0x0);	
-	}
-}
-
-void cleanBoardArr(uint16_t * board){
-	for (int i = 0; i < 320*480; i++) {
-		board[i] = 0x0;
 	}
 }
 
@@ -165,61 +156,6 @@ void initializeBorders(uint16_t * snakeArr) {
 	
 }
 
-void lightGreenLED(unsigned char * mem_base, int ledNumber){
-	uint32_t val_line = 0xFF00;
-
-	if (ledNumber == 1)
-		*(volatile uint32_t*)(mem_base + SPILED_REG_LED_RGB1_o) = val_line;
-	else
-		*(volatile uint32_t*)(mem_base + SPILED_REG_LED_RGB2_o) = val_line;
-	
-	sleep(0.5);
-}
-
-void lightBlueLED(unsigned char * mem_base, int ledNumber){
-	uint32_t val_line = 0xFF;
-    
-	if (ledNumber == 1)
-		*(volatile uint32_t*)(mem_base + SPILED_REG_LED_RGB1_o) = val_line;
-	else
-		*(volatile uint32_t*)(mem_base + SPILED_REG_LED_RGB2_o) = val_line;
-	
-	val_line = 0xFFFFFFFF;
-	*(volatile uint32_t*)(mem_base + SPILED_REG_LED_LINE_o) = val_line;
-
-	sleep(0.35);
-}
-
-void lightRedLED(unsigned char * mem_base, int ledNumber){
-	uint32_t val_line = 0xFF0000;
-
-	if (ledNumber == 1)
-		*(volatile uint32_t*)(mem_base + SPILED_REG_LED_RGB1_o) = val_line;
-	else
-		*(volatile uint32_t*)(mem_base + SPILED_REG_LED_RGB2_o) = val_line;
-
-	sleep(0.35);
-}
-
-void lightDownLED(unsigned char * mem_base, int ledNum) {
-	uint32_t val_line = 0x0;
-
-	switch (ledNum) {
-		case 1:
-			*(volatile uint32_t*)(mem_base + SPILED_REG_LED_RGB1_o) = val_line;
-			break;
-		case 2:
-			*(volatile uint32_t*)(mem_base + SPILED_REG_LED_RGB2_o) = val_line;
-			break;
-		case 3:
-			*(volatile uint32_t*)(mem_base + SPILED_REG_LED_RGB1_o) = val_line;
-			*(volatile uint32_t*)(mem_base + SPILED_REG_LED_RGB2_o) = val_line;
-			break;
-	}
-
-	*(volatile uint32_t*)(mem_base + SPILED_REG_LED_LINE_o) = val_line;
-}
-
 void redrawSnakeCell(uint16_t * snakeArr, int posX, int posY, uint16_t color) {
 
 	int distance = CELL_SIZE / 2;
@@ -251,7 +187,7 @@ int addApple(uint16_t * snakeArr) {
 		randomPosY = (rand() % verticalRange) * CELL_SIZE + 3 * BORDER_SIZE;
 		posInArr = randomPosY * LCD_WIDTH + randomPosX;
 		if (snakeArr[posInArr] == 0) {
-			printf("[%d, %d]; ", randomPosX, randomPosY);
+			//printf("[%d, %d]; ", randomPosX, randomPosY);
 			redrawSnakeCell(snakeArr, randomPosX, randomPosY, APPLE_COLOR);
 			wasSuccess = true;
 		}
@@ -297,7 +233,7 @@ bool isWithinLCD(int posX, int posY){
 bool isCellOccupied(uint16_t * snakeArr, Cell * head){
 
 	int posInSnakeArr = (head->posY) * 480 + head->posX;
-	printf("pos of head: [%d, %d], color: %hu\r\n", head->posX, head->posY, snakeArr[posInSnakeArr]);
+	//printf("pos of head: [%d, %d], color: %hu\r\n", head->posX, head->posY, snakeArr[posInSnakeArr]);
 
 	if (snakeArr[posInSnakeArr] == SNAKE_COLOR) {
 		return true;
@@ -341,7 +277,7 @@ bool snakeMakeMove(uint16_t * snakeArr, Cell ** directionArr, int * length, unsi
 		directionArr[*length-1] -> direction = directionArr[*length]->direction;
 
 		*length = *length + 1;
-		printf("Apple eaten -> updated length: %d\r\n", *length);
+		//printf("Apple eaten -> updated length: %d\r\n", *length);
 		return true;
 	}
 
@@ -366,32 +302,13 @@ void updateDirection(Cell * cell, unsigned char newDirection) {
 	cell -> direction = newDirection;
 }
 
-void basicArr(uint16_t * snakeArr, int pos, unsigned char * parlcd_mem_base){
-
-	int c;
-
-	for (int i = 0; i < 320 ; i++) {
-		for (int j = 0; j < 480 ; j++) {
-		
-			if (isInRange(i, j, 150, pos, 50)) {
-				c = 0xFFFF;
-			} else {
-				c = 0x0;
-			}
-			
-			snakeArr[i*480 + j] = c;
-		}
-	}
-
-}
-
 unsigned char getRandomDirection(unsigned char currentDir) {
 
 	unsigned char verticalDirs[] = {'U', 'D'};
 	unsigned char horizontalDirs[] = {'L', 'R'};
 
 	int randomIndex = rand() % 2;
-	printf("random index: %d,  ", randomIndex);
+	//printf("random index: %d,  ", randomIndex);
 
 	if (currentDir == 'U' || currentDir == 'D') {
 		return horizontalDirs[randomIndex]; 
@@ -431,7 +348,7 @@ unsigned char mapKeyToDirection(unsigned char lastDirection, char pressedKey) {
 				return 'L';
 			break;
 	}
-	printf("pressedKey not identified");
+	//printf("pressedKey not identified");
 	return 'X';
 
 }
@@ -453,7 +370,7 @@ unsigned char getKeyboardInput(unsigned char lastDirection){
 	
 	unsigned char newDir = mapKeyToDirection(lastDirection, keyPressed);
 
-	printf("Updating cell head direction: from %c to %c\r\n", lastDirection, newDir);
+	//printf("Updating cell head direction: from %c to %c\r\n", lastDirection, newDir);
 	return newDir;
 
 }
@@ -501,7 +418,7 @@ char generateComputerMoveDir(uint16_t * board, int * chosenAppleIndex, int * app
 	
 	int applePosX = applesArr[*chosenAppleIndex] % LCD_WIDTH;
 	int applePosY = (applesArr[*chosenAppleIndex] - applePosX) / LCD_WIDTH;
-	printf("going to [%d, %d] - ", applePosX, applePosY);
+	//printf("going to [%d, %d] - ", applePosX, applePosY);
 
 	int possibleDirs[4] = {'U', 'R', 'D', 'L'};
 	int possibleDirsVals[4] = {0, 0, 0, 0};
@@ -533,6 +450,15 @@ char generateComputerMoveDir(uint16_t * board, int * chosenAppleIndex, int * app
 		score--;
 	}
 
+}
+
+bool isAnyAppleLeft(int * applesArr, int len) { 
+	for (int i = 0; i < len; i++) {
+		if (applesArr[i] != -1 || applesArr[i] != 0) {
+			return true;
+		}
+	}
+	return false;
 }
 
 void playRandomVsSSH(unsigned char *mem_base, unsigned char *parlcd_mem_base, int * snakeLengthS1, int * snakeLengthS2, uint16_t * board, Cell ** directionArrS1, Cell ** directionArrS2, int applesCount){
@@ -578,6 +504,10 @@ void playRandomVsSSH(unsigned char *mem_base, unsigned char *parlcd_mem_base, in
 					}
 				}
 				isEaten = false;
+				if (!(isAnyAppleLeft(applesArr, applesCount))){
+					isGameOverS1 = true;
+					isGameOverS2 = true;
+				} 
 			}
 
 		}
@@ -586,17 +516,21 @@ void playRandomVsSSH(unsigned char *mem_base, unsigned char *parlcd_mem_base, in
 		if (!(isGameOverS1)) {
 			lightGreenLED(mem_base, 1);
 			currentDirS1 = generateComputerMoveDir(board, &chosenAppleIndex, applesArr, directionArrS1[*snakeLengthS1-1], applesCount);
-			printf("current: %c - ", currentDirS1);
+			//printf("current: %c - ", currentDirS1);
 			updateDirection(directionArrS1[*snakeLengthS1-1], currentDirS1);
 			if (!(snakeMakeMove(board, directionArrS1, snakeLengthS1, mem_base, &isEaten))) {
 				isGameOverS1 = true;
 				lightRedLED(mem_base, 1);
-				printf("Gameover for S1");
+				//printf("Gameover for S1");
 			}
 			if (isEaten) {
 				applesArr[chosenAppleIndex] = -1;
 				isEaten = false;
 				lightBlueLED(mem_base, 1);
+				if (!(isAnyAppleLeft(applesArr, applesCount))){
+					isGameOverS1 = true;
+					isGameOverS2 = true;
+				}
 			}
 		}
 		
@@ -627,17 +561,21 @@ void playRandomVsRandom(unsigned char *mem_base, unsigned char *parlcd_mem_base,
 		if (!(isGameOverS2)) {
 			lightGreenLED(mem_base, 2);
 			currentDirS2 = generateComputerMoveDir(board, &chosenAppleIndexS2, applesArr, directionArrS2[*snakeLengthS2-1], applesCount);
-			printf("current: %c", currentDirS2);
+			//printf("current: %c", currentDirS2);
 			updateDirection(directionArrS2[*snakeLengthS2-1], currentDirS2);
 			if (!(snakeMakeMove(board, directionArrS2, snakeLengthS2, mem_base, &isEaten))) {
 				isGameOverS2 = true;
 				lightRedLED(mem_base, 2);
-				printf("Gameover for S2");
+				//printf("Gameover for S2");
 			}
 			if (isEaten) {
 				applesArr[chosenAppleIndexS2] = -1;
 				isEaten = false;
 				lightBlueLED(mem_base, 2);
+				if (!(isAnyAppleLeft(applesArr, applesCount))){
+					isGameOverS1 = true;
+					isGameOverS2 = true;
+				} 
 			}
 
 		}
@@ -646,125 +584,26 @@ void playRandomVsRandom(unsigned char *mem_base, unsigned char *parlcd_mem_base,
 		if (!(isGameOverS1)) {
 			lightGreenLED(mem_base, 1);
 			currentDirS1 = generateComputerMoveDir(board, &chosenAppleIndexS1, applesArr, directionArrS1[*snakeLengthS1-1], applesCount);
-			printf("current: %c", currentDirS1);
+			//printf("current: %c", currentDirS1);
 			updateDirection(directionArrS1[*snakeLengthS1-1], currentDirS1);
 			if (!(snakeMakeMove(board, directionArrS1, snakeLengthS1, mem_base, &isEaten))) {
 				isGameOverS1 = true;
 				lightRedLED(mem_base, 1);
-				printf("Gameover for S1");
+				//printf("Gameover for S1");
 			}
 			if (isEaten) {
 				applesArr[chosenAppleIndexS1] = -1;
 				isEaten = false;
 				lightBlueLED(mem_base, 1);
+				if (!(isAnyAppleLeft(applesArr, applesCount))){
+					isGameOverS1 = true;
+					isGameOverS2 = true;
+				}
 			}
 		}
 		
 
 	}
-
-}
-
-void printMenuMode(uint16_t * board){
-
-	char strMode[]="Mode:";
-	char strMode1[]="1:AI vs AI";
-	char strMode2[]="2:AI vs Person";
-	
-	printText(strMode, strlen(strMode), 5, 20, board);
-	printText(strMode1, strlen(strMode1), 5, 120, board);
-	printText(strMode2, strlen(strMode2), 2, 200, board);
-
-}
-
-void printMenuAppleCount(uint16_t * board) {
-
-	char firstLine[]="Select number";
-	char secondLine[]="of food pieces:";
-	//char thirdLine[]="pieces:";
-	char fourthLine[]="<5, 25>";
-
-	printText(firstLine, strlen(firstLine), 10, 1, board);
-	printText(secondLine, strlen(secondLine), 10, 80, board);
-	//printText(thirdLine, strlen(thirdLine), 10, 160, board);
-	printText(fourthLine, strlen(fourthLine), 50, 180, board);
-
-}
-
-int getKeyboardMenuInput() {
-	int num;
-	int ret = scanf("%d", &num);
-
-	if (ret != 1) {
-		printf("Wrong input. Please, enter the input once again.");
-		return -1;
-	}
-
-	return num;
-}
-
-void runMenu(int * mode, int * applesCount, uint16_t * board, unsigned char *parlcd_mem_base) {
-	
-	// menu #1 - select mode
-	printMenuMode(board);
-	printBoardToLcd(board, parlcd_mem_base);
-	
-	printf("Enter the mode number (1 for Computer vs Computer, 2 for Computer  vs Person): ");
-	while (1) {
-		*mode = getKeyboardMenuInput();
-		if (*mode == 1 || *mode == 2) {
-			printf("Mode %d has been accepted.\n", *mode);
-			break;
-		} else {
-			if (*mode != -1) {
-				printf("Wrong input. Please, enter the input once again.\n");
-			}
-		}
-	}
-
-	cleanBoardArr(board);
-	
-	// menu #2 - select apples count
-	printMenuAppleCount(board);
-	printBoardToLcd(board, parlcd_mem_base);
-	
-	printf("Enter the desired number of food pieces from the interval <5, 25>: ");
-	while (1) {
-		*applesCount = getKeyboardMenuInput();
-		if (*applesCount >= 5 && * applesCount <= 25) {
-			printf("Apples count %d has been accepted.\n", *applesCount);
-			break;
-		} else {
-			if (*applesCount != -1) {
-				printf("Wrong input. Please, enter the input once again.\n");
-			}
-		}
-	
-	}
-	cleanBoardArr(board);
-}
-
-void printSnakeLengths(uint16_t * board, int len1, int len2, double time, unsigned char *parlcd_mem_base){
-
-	cleanBoardArr(board);
-
-	int strLength1 = snprintf( NULL, 0, "#1 length: %d", len1);
-	int strLength2 = snprintf( NULL, 0, "#2 length: %d", len2);
-	int strLength3 = snprintf( NULL, 0, "Time %.2f s", time);
-
-	char str1[strLength1];
-	char str2[strLength2];
-	char str3[strLength3];
-
-	snprintf(str1, strLength1 + 1, "#1 length: %d", len1);
-	snprintf(str2, strLength2 + 1, "#2 length: %d", len2);
-	snprintf(str3, strLength3 + 1, "Time %.2f s", time);
-
-	printText(str1, strLength1, 5, 30, board);
-	printText(str2, strLength2, 5, 130, board);
-	printText(str3, strLength3, 5, 230, board);
-
-	printBoardToLcd(board, parlcd_mem_base);
 
 }
 
@@ -817,11 +656,9 @@ int main(int argc, char *argv[]) {
 	
 	clock_gettime(CLOCK_REALTIME, &stop);
    	double accum = ( stop.tv_sec - start.tv_sec )*1000.0 + ( stop.tv_nsec - start.tv_nsec )/ 1000000.0;
-   	printf("\r\nTime: %.6lf s\r\n", accum/1000);
 
 	sleep(1);
 	printSnakeLengths(board, snakeLengthS1, snakeLengthS2, accum/1000, parlcd_mem_base);
-	printf("S1 length: %d, S2 length: %d", snakeLengthS1, snakeLengthS2);
 
 	sleep(4);
 	// leave black screen

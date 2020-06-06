@@ -6,7 +6,7 @@ CFLAGS =-g -std=gnu99 -O1 -Wall
 CXXFLAGS = -g -std=gnu++11 -O1 -Wall
 LDFLAGS = -lrt -lpthread
 
-SOURCES = lcd.c mzapo_phys.c mzapo_parlcd.c wTahoma_88.c font_functions.c
+SOURCES = lcd.c mzapo_phys.c mzapo_parlcd.c wTahoma_88.c font_functions.c leds_interaction.c
 #SOURCES += font_prop14x16.c font_rom8x16.c
 TARGET_EXE = change_me
 #TARGET_IP ?= 192.168.202.127
