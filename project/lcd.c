@@ -19,7 +19,8 @@
 #include "mzapo_parlcd.h"
 #include "mzapo_phys.h"
 #include "mzapo_regs.h"
-#include "font_types.h"
+#include "font_functions.h"
+//#include "font_types.h"
 
 
 #define BAUDRATE B38400
@@ -27,17 +28,22 @@
 #define FALSE 0
 #define TRUE 1
 
-#define LCD_WIDTH 480
-#define LCD_HEIGHT 320
 #define CELL_SIZE 20 
 #define APPLE_COLOR 0xE061 //0xC841 //red color  
 #define SNAKE_COLOR 0xFFFF
 #define BORDER_COLOR 0xFFFE
-#define TEXT_COLOR 0xAD9C
 #define BORDER_SIZE 10
 
 #define SPILED_REG_LED_LINE_o	0x004
 #define SPILED_REG_LED_RGB2_o	0x014
+
+#ifndef LCD_WIDTH
+#define LCD_WIDTH 480
+#endif
+
+#ifndef LCD_HEIGHT
+#define LCD_HEIGHT 320
+#endif
 
 typedef struct Cell{
 	int posX;
@@ -236,13 +242,13 @@ int addApple(uint16_t * snakeArr) {
 	bool wasSuccess = false;
 	int randomPosX, randomPosY, posInArr;
 
-	int horizontalRange = (LCD_WIDTH - 4 * BORDER_SIZE) / CELL_SIZE;
-	int verticalRange = (LCD_HEIGHT - 4 * BORDER_SIZE) / CELL_SIZE;
+	int horizontalRange = (LCD_WIDTH - 6 * BORDER_SIZE) / CELL_SIZE;
+	int verticalRange = (LCD_HEIGHT - 6 * BORDER_SIZE) / CELL_SIZE;
 
 	while(!(wasSuccess)) {
 		
-		randomPosX = (rand() % horizontalRange) * CELL_SIZE + 2*BORDER_SIZE;
-		randomPosY = (rand() % verticalRange) * CELL_SIZE + 2*BORDER_SIZE;
+		randomPosX = (rand() % horizontalRange) * CELL_SIZE + 2 * BORDER_SIZE;
+		randomPosY = (rand() % verticalRange) * CELL_SIZE + 3 * BORDER_SIZE;
 		posInArr = randomPosY * LCD_WIDTH + randomPosX;
 		if (snakeArr[posInArr] == 0) {
 			printf("[%d, %d]; ", randomPosX, randomPosY);
@@ -659,91 +665,6 @@ void playRandomVsRandom(unsigned char *mem_base, unsigned char *parlcd_mem_base,
 
 }
 
-void drawPixel(uint16_t * board, int posX, int posY) {
-
-	if ((unsigned) posX >= LCD_WIDTH || (unsigned) posY > LCD_HEIGHT) {
-		return;
-	}
-	
-	board[posY*LCD_WIDTH + posX] = TEXT_COLOR;
-
-}
-
-int getCharWidth(font_descriptor_t* fdes, int ch) {
-	int width = 0;
-	if ((ch >= fdes->firstchar) && (ch-fdes->firstchar < fdes->size)) {
-		ch -= fdes->firstchar;
-		
-		if (!fdes->width) {
-			width = fdes->maxwidth;
-		} else {
-			width = fdes->width[ch];
-		}
-	}
-	return width;
-}
-
-void drawChar(font_descriptor_t* fdes, uint16_t * board, int charWidth, int ch, int posX, int posY) {
-
-	int charOffset = ch - fdes->firstchar;
-	uint16_t * charStartPtr = (uint16_t *) fdes->bits + charOffset * fdes->height;
-
-	for (int j = 0; j < fdes->height; j++) {
-		uint16_t line = *charStartPtr;
-		for (int i = 0; i < charWidth; i++) {		
-			
-			if (line & 0x8000) {
-				drawPixel(board, posX, posY);
-			}
-			line <<= 1;
-		}
-		charStartPtr++;
-	}
-
-}
-
-void drawCharLarger(font_descriptor_t* fdes, uint16_t * board, int charWidth, int ch, int posX, int posY) {
-
-	int charOffset = ch - fdes->firstchar;
-	uint16_t * charStartPtr = (uint16_t *) fdes->bits + fdes-> offset[charOffset];
-
-	for (int j = 0; j < fdes->height; j++) {
-		uint16_t line = *charStartPtr;
-		for (int i = 0; i < charWidth; i++) {		
-			
-			if (!(i & 15)) {	// if (i & 0xFF) == 0
-				line = *(charStartPtr++);
-			}
-
-			if (line & 0x8000) {
-				drawPixel(board, posX + i, posY + j);
-			}
-			line <<= 1;
-		}
-	}
-
-}
-
-void printText(char * str, int length, int posX, int posY, uint16_t * board) {
-
-	font_descriptor_t* fdes = &font_wTahoma_88;
-	int charWidth = 20;
-
-	for (int i=0; i < length; i++) {
-		if (*str == ' ') {
-			posX += charWidth;
-			str++;
-			continue;
-		}
-
-		charWidth = getCharWidth(fdes, *str);
-		drawCharLarger(fdes, board, charWidth, *str, posX, posY);
-		posX += charWidth;
-		str++;
-	}
-
-}
-
 void printMenuMode(uint16_t * board){
 
 	char strMode[]="Mode:";
@@ -823,6 +744,30 @@ void runMenu(int * mode, int * applesCount, uint16_t * board, unsigned char *par
 	cleanBoardArr(board);
 }
 
+void printSnakeLengths(uint16_t * board, int len1, int len2, double time, unsigned char *parlcd_mem_base){
+
+	cleanBoardArr(board);
+
+	int strLength1 = snprintf( NULL, 0, "#1 length: %d", len1);
+	int strLength2 = snprintf( NULL, 0, "#2 length: %d", len2);
+	int strLength3 = snprintf( NULL, 0, "Time %.2f s", time);
+
+	char str1[strLength1];
+	char str2[strLength2];
+	char str3[strLength3];
+
+	snprintf(str1, strLength1 + 1, "#1 length: %d", len1);
+	snprintf(str2, strLength2 + 1, "#2 length: %d", len2);
+	snprintf(str3, strLength3 + 1, "Time %.2f s", time);
+
+	printText(str1, strLength1, 5, 30, board);
+	printText(str2, strLength2, 5, 130, board);
+	printText(str3, strLength3, 5, 230, board);
+
+	printBoardToLcd(board, parlcd_mem_base);
+
+}
+
 int main(int argc, char *argv[]) {
 	
 	time_t t;
@@ -861,15 +806,24 @@ int main(int argc, char *argv[]) {
 	initializeSnakeAndDirection(BORDER_SIZE + CELL_SIZE + 10, BORDER_SIZE + 8*CELL_SIZE + 100, snakeLengthS2, board, directionArrS2);
 	initializeBorders(board);
 	
+	struct timespec start, stop;
+   	clock_gettime(CLOCK_REALTIME, &start);
+
 	if (mode == 1) {
 		playRandomVsRandom(mem_base, parlcd_mem_base, &snakeLengthS1, &snakeLengthS2, board, directionArrS1, directionArrS2, applesCount);
 	} else {
 		playRandomVsSSH(mem_base, parlcd_mem_base, &snakeLengthS1, &snakeLengthS2, board, directionArrS1, directionArrS2, applesCount);
 	}
 	
+	clock_gettime(CLOCK_REALTIME, &stop);
+   	double accum = ( stop.tv_sec - start.tv_sec )*1000.0 + ( stop.tv_nsec - start.tv_nsec )/ 1000000.0;
+   	printf("\r\nTime: %.6lf s\r\n", accum/1000);
+
+	sleep(1);
+	printSnakeLengths(board, snakeLengthS1, snakeLengthS2, accum/1000, parlcd_mem_base);
 	printf("S1 length: %d, S2 length: %d", snakeLengthS1, snakeLengthS2);
 
-	sleep(2);
+	sleep(4);
 	// leave black screen
 	blackLcd(parlcd_mem_base);
 
