@@ -41,11 +41,7 @@ typedef struct {
         int32_t          bits_size;      /* # words of MWIMAGEBITS bits*/
 } font_descriptor_t;
 
-extern font_descriptor_t font_winFreeSystem14x16;
-extern font_descriptor_t font_wArial_88;
-extern font_descriptor_t font_wArial_44;
 extern font_descriptor_t font_wTahoma_88;
-extern font_descriptor_t font_rom8x16;
 
 #ifdef __cplusplus
 } /* extern "C"*/

@@ -1,3 +1,5 @@
 *.o
 depend
-change_me
+mzapo-root-key
+goldasova_apo.zip
+./.vscode/

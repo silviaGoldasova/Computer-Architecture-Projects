@@ -1,3 +1,15 @@
+/**********************************************************************************************
+	Snake game program. The game can be played on MZ_APO board.
+
+	font_functions.c - Consists of fuctions which take care of printing to the MZ_APO
+	LCD display: be it pixels or whole words (using wTahoma_88 font).
+	Functions printing texts to the display were grouped to form functions printing whole menus.
+
+  	Developed by: Silvia Goldasova
+  	Date: May 2020
+
+ ***********************************************************************************************/
+
 #include <stdio.h>
 #include "font_types.h"
 #include <stdlib.h>
