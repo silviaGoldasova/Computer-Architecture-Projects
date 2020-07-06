@@ -1,1 +1,4 @@
 mzapo-root-key
+.vscode/
+main
+Goldasova_apo_documentation.docx
