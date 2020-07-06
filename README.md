@@ -1,7 +1,5 @@
-## Project title
-Computer Architecture Course Projects
-
 ## Characterization
+Computer Architecture Course Projects
 
 ### "project" folder
 Features a Snake game implemented in C for the development board MicroZed.
